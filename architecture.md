@@ -25,7 +25,7 @@ Redis (session cache) | Supabase (auth + vector) | Postgres (LangGraph checkpoin
 ```
 
 Every node updates a single shared state object as it moves through the graph, and state is
-checkpointed to Postgres after each node — so a crash mid-request is recoverable and debuggable
+checkpointed to Postgres after each node - so a crash mid-request is recoverable and debuggable
 node-by-node, not a black box.
 
 ## Node execution flow
@@ -73,20 +73,20 @@ SECURITY_INPUT
 | after principal plan | `slave_executor` / `principal_synthesize` | Empty plan → synthesize directly; has tasks → execute |
 | quality gate | `slave_executor` / `principal_synthesize` | Score < threshold and retries remain → loop back; else → synthesize |
 
-A node's output shape change ripples through whichever routing function reads it — that
+A node's output shape change ripples through whichever routing function reads it - that
 dependency is checked before any node edit, not after.
 
 ## Design principles
 
-1. **Fail-safe by default** — security gates allow-through on internal errors (fail-open,
+1. **Fail-safe by default** - security gates allow-through on internal errors (fail-open,
    logged), never crash the user experience.
-2. **Token efficiency** — keyword routing before LLM calls; simple-content detection short-
+2. **Token efficiency** - keyword routing before LLM calls; simple-content detection short-
    circuits the planner entirely for low-complexity requests.
-3. **Resilience** — every node wrapped in try/except; a single node failure never crashes the
+3. **Resilience** - every node wrapped in try/except; a single node failure never crashes the
    graph.
-4. **Self-correction** — the quality gate loops back to the slave executor with intent-aware
+4. **Self-correction** - the quality gate loops back to the slave executor with intent-aware
    thresholds and retry caps, not a fixed one-shot generation.
-5. **Memory-first** — the clarify node always loads memory before asking questions, so the
+5. **Memory-first** - the clarify node always loads memory before asking questions, so the
    system never re-asks something the user already told it.
-6. **Defense in depth** — input security → moderation → output security, three independent
+6. **Defense in depth** - input security → moderation → output security, three independent
    checkpoints rather than one.

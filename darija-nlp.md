@@ -1,7 +1,7 @@
 # Darija-Aware NLP
 
 Algerian users routinely code-switch across Arabic script, French, and Franco-Arabic (Latin
-letters with digits standing in for sounds that don't map to the Latin alphabet) — often within
+letters with digits standing in for sounds that don't map to the Latin alphabet) - often within
 the same message. Standard NLP pipelines built for monolingual or even standard bilingual text
 misclassify or mangle this by default.
 
@@ -9,11 +9,11 @@ misclassify or mangle this by default.
 
 Every message is classified into one of five categories before it reaches an LLM:
 
-- `arabic` — Arabic script
-- `french` — standard French
-- `english` — standard English
-- `franco` — Franco-Arabic (Latin letters + digit substitutions)
-- `mixed` — code-switched across the above within one message
+- `arabic` - Arabic script
+- `french` - standard French
+- `english` - standard English
+- `franco` - Franco-Arabic (Latin letters + digit substitutions)
+- `mixed` - code-switched across the above within one message
 
 The detected script changes downstream behavior: which language the response is generated in,
 which prompt variant is selected, and how chat history gets normalized before it's merged into
@@ -32,7 +32,7 @@ Franco-Arabic substitutes digits for Arabic sounds with no Latin equivalent:
 | `5` | خ | kha |
 
 A message like `3lach ma jawebtch` normalizes through this mapping before intent classification
-and RAG retrieval — without it, the digits get treated as literal numbers and the whole
+and RAG retrieval - without it, the digits get treated as literal numbers and the whole
 downstream pipeline (routing, retrieval, generation) degrades.
 
 ```python
@@ -51,6 +51,6 @@ def normalize_franco_digits(text: str) -> str:
     return text
 ```
 
-This is a simplified illustration of the mapping table, not the production tokenizer — the real
+This is a simplified illustration of the mapping table, not the production tokenizer - the real
 implementation also handles word-boundary detection (so a French message that happens to contain
 a digit doesn't get corrupted) and mixed-script segmentation.

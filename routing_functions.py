@@ -1,9 +1,9 @@
 """
-Graph routing functions — reference implementation.
+Graph routing functions - reference implementation.
 
 Public reference reflecting the decision logic described in docs/architecture.md, written for
 this showcase rather than copy-pasted production source. Pure functions: state in, next-node
-name out, no I/O, no LLM calls, no side effects — routing decisions are cheap by design.
+name out, no I/O, no LLM calls, no side effects - routing decisions are cheap by design.
 """
 
 from .state import AsuqState
@@ -69,7 +69,7 @@ def route_after_plan(state: AsuqState) -> str:
     return "slave_executor"
 
 
-# Intent-aware quality thresholds — content generation is cheap to redo, competitive analysis
+# Intent-aware quality thresholds - content generation is cheap to redo, competitive analysis
 # is expensive and gets more retry budget.
 QUALITY_THRESHOLDS = {
     "content": 6.0,

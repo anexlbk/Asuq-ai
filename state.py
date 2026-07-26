@@ -1,11 +1,11 @@
 """
-AsuqState — reference schema.
+AsuqState - reference schema.
 
 Public reference reflecting the shape of the production state object, not copy-pasted
 production source. Field names and grouping are accurate; this file has no business logic.
 
 Every node in the graph reads a subset of this state and writes a subset back. Adding a field
-means updating this schema AND every node that should populate or consume it — the graph has no
+means updating this schema AND every node that should populate or consume it - the graph has no
 implicit field discovery.
 """
 
@@ -34,6 +34,11 @@ class AsuqState(TypedDict, total=False):
 
     # Skill output
     skill_output: dict[str, Any]
+
+    # Landing page
+    product_image_url: Optional[str]
+    landing_page_preferences: dict[str, Any]
+    landing_page_output: dict[str, Any]
 
     # LLM
     llm_response: str

@@ -1,12 +1,12 @@
 """
-BaseSlave contract — reference implementation.
+BaseSlave contract - reference implementation.
 
 Public reference reflecting the agent interface described in docs/architecture.md, written for
 this showcase rather than copy-pasted production source.
 
 11 specialist slaves (researcher, strategist, creator, localizer, reviewer, searcher,
 requirements, reflection, security_input, security_output, rag_browser) implement this contract.
-The Principal planner selects from a fixed allowlist of "approved" slaves per task — adding a new
+The Principal planner selects from a fixed allowlist of "approved" slaves per task - adding a new
 slave means implementing this ABC, registering it, and deciding whether it belongs in that
 allowlist. Slaves outside the allowlist exist but aren't planner-selectable.
 """
@@ -22,7 +22,7 @@ class SlaveOutput:
     metadata: dict[str, Any] = field(default_factory=dict)
     requires_llm: bool = False
     status_message: Optional[str] = None
-    # Deliberately no `status` or `data` fields — every consumer reads `result` /
+    # Deliberately no `status` or `data` fields - every consumer reads `result` /
     # `metadata`. Reaching for `.status` or `.data` on this object is a field-name bug,
     # not a missing feature.
 
@@ -31,7 +31,7 @@ class BaseSlave(ABC):
     """
     Every slave is a single-purpose async unit the Principal can schedule as part of a plan.
     Slaves execute in dependency-ordered batches (asyncio.gather within a batch), each batch
-    bounded by a fixed timeout — one slow slave doesn't block unrelated ones.
+    bounded by a fixed timeout - one slow slave doesn't block unrelated ones.
     """
 
     name: str
