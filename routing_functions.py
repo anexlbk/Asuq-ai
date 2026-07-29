@@ -11,6 +11,10 @@ from .state import AsuqState
 
 def route_after_input_security(state: AsuqState) -> str:
     result = state.get("security_input_result", {})
+    if result.get("safe") is False:
+        return "response_formatter"
+    if result.get("error"):
+        return "response_formatter"
     if result.get("blocked"):
         return "response_formatter"
     return "prompt_rating"
@@ -69,8 +73,7 @@ def route_after_plan(state: AsuqState) -> str:
     return "slave_executor"
 
 
-# Intent-aware quality thresholds - content generation is cheap to redo, competitive analysis
-# is expensive and gets more retry budget.
+# Intent-aware quality thresholds (illustrative values — production uses config).
 QUALITY_THRESHOLDS = {
     "content": 6.0,
     "ad_copy": 6.0,

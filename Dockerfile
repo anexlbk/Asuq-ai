@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "-m", "app.main"]
+CMD ["python", "-m", "app.main"]  # Example entrypoint — adjust for your module structure

@@ -1,11 +1,11 @@
-"""Quality gate node — evaluates slave output and decides on retry."""
+"""Quality gate node — evaluates slave output and decides on retry (SHOWCASE)."""
 
 from typing import Any, Dict
 
 from app.graph.state import AsuqState
 
-BASE_THRESHOLD = 7.0
-LEGAL_THRESHOLD = 7.5
+BASE_THRESHOLD = 7.0  # illustrative
+LEGAL_THRESHOLD = 7.5  # illustrative
 
 
 def get_quality_threshold(state: AsuqState) -> float:

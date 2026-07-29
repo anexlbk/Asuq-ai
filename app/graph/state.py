@@ -10,6 +10,7 @@ class AsuqState(TypedDict):
     current_normalized_input: str
     normalized_input: str
     language_override: Optional[str]
+    darija_confidence: float
     chat_history: List[str]
     intent: str
     selected_skill: str

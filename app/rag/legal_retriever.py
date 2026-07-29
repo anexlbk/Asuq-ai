@@ -1,16 +1,17 @@
-"""Legal document retriever for Algerian law queries.
+"""Legal document retriever for Algerian law queries (SHOWCASE).
 
 Two-round-trip retrieval:
-  1. Vector search via match_dz_knowledge RPC (category="regulations")
-  2. Separate legal_metadata fetch for citation verification
+  1. Vector search via match_knowledge RPC
+  2. Separate metadata fetch for citation verification
 
-Ensures cited articles can be verified against stored metadata
-before the LegalExpertSlave uses them in its response.
+Table names are illustrative — production uses different naming.
 """
-
 from typing import Any, Dict, List, Optional
 
 from supabase import Client as SupabaseClient
+
+_KNOWLEDGE_TABLE = "knowledge_base"
+_MATCH_RPC = "match_knowledge"
 
 
 def retrieve_legal_documents(
@@ -20,13 +21,8 @@ def retrieve_legal_documents(
     top_k: int = 10,
     similarity_threshold: float = 0.65,
 ) -> List[Dict[str, Any]]:
-    """Retrieve relevant legal documents via vector similarity search.
-
-    Uses the match_dz_knowledge RPC with moderation_status='approved'
-    and category='regulations' filters.
-    """
     result = supabase.rpc(
-        "match_dz_knowledge",
+        _MATCH_RPC,
         {
             "query_embedding": embedding,
             "match_threshold": similarity_threshold,
@@ -34,28 +30,22 @@ def retrieve_legal_documents(
             "filter_category": "regulations",
         },
     ).execute()
-
-    docs = result.data or []
-    return docs
+    return result.data or []
 
 
 def fetch_legal_metadata(
     supabase: SupabaseClient,
     doc_ids: List[int],
 ) -> Dict[int, Dict[str, Any]]:
-    """Fetch legal_metadata for the given document IDs.
-
-    Returns dict mapping id -> legal_metadata JSON for citation verification.
-    """
     if not doc_ids:
         return {}
     result = (
-        supabase.table("dz_knowledge")
-        .select("id, legal_metadata")
+        supabase.table(_KNOWLEDGE_TABLE)
+        .select("id, doc_metadata")
         .in_("id", doc_ids)
         .execute()
     )
-    return {row["id"]: row.get("legal_metadata", {}) for row in (result.data or [])}
+    return {row["id"]: row.get("doc_metadata", {}) for row in (result.data or [])}
 
 
 def retrieve_for_legal_query(
@@ -64,10 +54,6 @@ def retrieve_for_legal_query(
     embedding: List[float],
     top_k: int = 10,
 ) -> Dict[str, Any]:
-    """Full two-round-trip retrieval for a legal query.
-
-    Returns both the documents and their verified metadata.
-    """
     docs = retrieve_legal_documents(supabase, query, embedding, top_k=top_k)
     doc_ids = [d["id"] for d in docs if "id" in d]
     metadata_map = fetch_legal_metadata(supabase, doc_ids)

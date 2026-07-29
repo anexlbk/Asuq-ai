@@ -79,7 +79,15 @@ def _should_write_memory(state: AsuqState) -> str:
 
 
 def _route_after_input_security(state: AsuqState) -> str:
-    """After security_input: route to prompt_rating if safe, response_formatter if blocked."""
+    """After security_input: route to prompt_rating if safe, response_formatter if blocked.
+
+    Fail-closed: any error (even an internal one) blocks the request.
+    """
+    result = state.get("security_input_result", {})
+    if result.get("safe") is False:
+        return "response_formatter"
+    if result.get("error"):
+        return "response_formatter"
     if state.get("error") == "security_block":
         return "response_formatter"
     return "prompt_rating"

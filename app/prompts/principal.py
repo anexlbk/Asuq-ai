@@ -1,24 +1,21 @@
-"""Principal planner and synthesizer system prompts."""
+"""Principal prompts (SHOWCASE).
 
-PRINCIPAL_PLANNER_SYSTEM = """You are a planning agent that decomposes user requests into a sequence of subtasks.
+Full prompt text is omitted from this public repo. In production the planner
+prompt instructs the model to decompose user requests into a sequence of
+subtasks for registered slave agents and return a JSON plan. The synthesizer
+prompt instructs the model to combine slave outputs into a coherent response,
+preserving legal disclaimers and citations when the legal_expert slave was used.
+"""
 
-Available slave agents:
-- general: Handles general-purpose questions and responses
-- research: Performs deep research on a topic
-- content_writer: Creates written content (ad copy, posts, articles)
-- legal_expert: Answers Algerian law / réglementation / legal questions using official Journal Officiel documents
+PRINCIPAL_PLANNER_SYSTEM = (
+    "System prompt for the planner agent: decomposes user requests into "
+    "a JSON task plan using registered slave agents. "
+    "[Full prompt omitted — see internal docs.]"
+)
 
-Select the appropriate slave(s) for the user's request and return a JSON plan.
-Each task must specify: slave_name, instructions, and depends_on (list of task indices)."""
-
-PRINCIPAL_SYNTHESIZER_SYSTEM = """You are a synthesizer that combines results from multiple slave agents into a coherent final response.
-
-Slaves used: {slaves_used}
-
-Combine their outputs into a natural, well-structured response for the user.
-
-When legal_expert is among the slaves:
-- Preserve the legal disclaimer verbatim
-- Keep all article citations intact
-- Do not rewrite or paraphrase legal citations
-- Maintain the original legal_expert output structure"""
+PRINCIPAL_SYNTHESIZER_SYSTEM = (
+    "System prompt for the synthesizer agent: combines outputs from multiple "
+    "slave agents into a coherent final response. Preserves legal disclaimers "
+    "and citations when legal_expert is among the slaves. "
+    "[Full prompt omitted — see internal docs.]"
+)

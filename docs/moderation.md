@@ -23,12 +23,12 @@ graph TD
 
 ## Layers
 
-| Layer | Technology | Speed | Notes |
-|-------|-----------|-------|-------|
-| **L1 - Blocklist** | Regex patterns | ~microseconds | Configurable via `MODERATION_BLOCKLIST` |
-| **L2 - Toxic Classifier** | `unitary/toxic-bert` | ~50ms | Optional (requires transformers + torch) |
-| **L3 - LLM Judge** | Groq fast model | ~200ms | Evaluates hate, misinformation, spam, PII |
-| **L4 - AI Gate** | SecurityInput/OutputSlaves | ~300ms | Regex fast-path + LLM deep check |
+| Layer | Technology | Notes |
+|-------|-----------|-------|
+| **L1 - Blocklist** | Regex patterns | Configurable via `MODERATION_BLOCKLIST` |
+| **L2 - Toxic Classifier** | Classification model | Optional, runs locally |
+| **L3 - LLM Judge** | Fast LLM | Evaluates hate, misinformation, spam, PII |
+| **L4 - AI Gate** | SecurityInput/OutputSlaves | Regex fast-path + LLM deep check |
 
 ## Actions
 
@@ -52,7 +52,9 @@ graph TD
 
 ## Security Gates (Graph-Level)
 
-In addition to the moderation pipeline, the graph has two security nodes:
+In addition to the moderation pipeline, the graph has two security nodes. Both are **fail-closed**:
+on any internal error (timeout, model unavailable, unexpected exception) they return `safe: False`
+to block the request rather than allowing it through. The error is always logged.
 
 ### Input Gate (`security_input_node.py`)
 - Runs on every user message before any processing
@@ -71,5 +73,5 @@ In addition to the moderation pipeline, the graph has two security nodes:
 | Setting | Default | Purpose |
 |---------|---------|---------|
 | `MODERATION_ENABLED` | `true` | Enable moderation pipeline |
-| `MODERATION_BLOCKLIST` | *(empty)* | Comma-separated regex patterns for Layer 1 |
-| `MODERATION_LAYER_2_THRESHOLD` | `0.7` | Toxicity classifier threshold |
+| `MODERATION_BLOCKLIST` | configurable | Regex patterns for Layer 1 |
+| `MODERATION_LAYER_2_THRESHOLD` | configurable | Toxicity classifier threshold |

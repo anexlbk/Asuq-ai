@@ -26,7 +26,8 @@ async def principal_plan_node(state: AsuqState) -> Dict[str, Any]:
     prompt = PRINCIPAL_PLANNER_SYSTEM + f"\n\nUser request: {query}\n\nAvailable slaves: {', '.join(APPROVED_SLAVES)}\n\nReturn a JSON plan."
 
     response = await llm.agenerate([prompt])
-    plan_text = response.generations[0][0].text
+    from app.utils.llm_utils import safe_llm_response
+    plan_text = safe_llm_response(response.generations)
 
     import json
     try:

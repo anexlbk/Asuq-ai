@@ -54,3 +54,16 @@ def normalize_franco_digits(text: str) -> str:
 This is a simplified illustration of the mapping table, not the production tokenizer - the real
 implementation also handles word-boundary detection (so a French message that happens to contain
 a digit doesn't get corrupted) and mixed-script segmentation.
+
+## Language Override
+
+Sticky facts can include a language_override field (en | r | r | darija) that forces
+the response language regardless of input script detection. "darija" is distinct from "ar" (MSA)
+— the LLM backbone, memory manager, and synthesizer all handle it separately.
+
+## Confidence Scoring
+
+Every utterance receives a darija_confidence score (0.0–1.0) during preprocessing:
+- Franco-Arabic digit presence, known Darija vocabulary matches, and short-utterance boost (=3 words)
+- Phone numbers and prices are preserved (not normalized)
+- The score is injected into the LLM system prompt for register-aware responses

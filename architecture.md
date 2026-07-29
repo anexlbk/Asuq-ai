@@ -76,10 +76,12 @@ SECURITY_INPUT
 A node's output shape change ripples through whichever routing function reads it - that
 dependency is checked before any node edit, not after.
 
+> **Note:** This is an architecture showcase. File contents are reference implementations and illustrative examples, not production code.
+
 ## Design principles
 
-1. **Fail-safe by default** - security gates allow-through on internal errors (fail-open,
-   logged), never crash the user experience.
+1. **Fail-closed by default** - security gates block on internal errors (fail-closed, logged),
+   never allow potentially harmful content through during a dependency failure.
 2. **Token efficiency** - keyword routing before LLM calls; simple-content detection short-
    circuits the planner entirely for low-complexity requests.
 3. **Resilience** - every node wrapped in try/except; a single node failure never crashes the

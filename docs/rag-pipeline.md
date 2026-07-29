@@ -32,9 +32,9 @@ graph TD
 
 `app/rag/embeddings.py` implements a 3-model fallback chain:
 
-1. **Primary:** `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` (768d)
-2. **Fallback 1:** `intfloat/multilingual-e5-large` (1024d)
-3. **Fallback 2:** `BAAI/bge-small-en-v1.5` (384d)
+1. **Primary:** Primary embedding model (e.g., multilingual MPNet, 768d)
+2. **Fallback 1:** Secondary model (e.g., E5-large, 1024d)
+3. **Fallback 2:** Lightweight fallback (e.g., BGE-small, 384d)
 4. **Final fallback:** SHA-256 hash-based deterministic vectors (no model load)
 
 Models are lazy-loaded only if cached locally. Thread-safe via `ThreadPoolExecutor(max_workers=4)`.
@@ -44,20 +44,20 @@ Models are lazy-loaded only if cached locally. Thread-safe via `ThreadPoolExecut
 | Function | Purpose |
 |----------|---------|
 | `match_memories()` | Semantic search over long-term user memories |
-| `match_dz_knowledge()` | Semantic search over knowledge base (768d) |
-| `match_dz_knowledge_v2()` | Same but on 1024d embeddings |
+| `match_knowledge()` | Semantic search over knowledge base |
+| `match_knowledge_v2()` | Same but on higher-dimension embeddings |
 
-Indexes: HNSW on `embedding` and `embedding_v2` columns using `vector_cosine_ops`.
+Indexes: HNSW on embedding columns using `vector_cosine_ops`.
 
 ## Configuration
 
-| Setting | Default | Purpose |
-|---------|---------|---------|
+| Setting | Default (illustrative) | Purpose |
+|---------|----------------------|---------|
 | `RAG_STRATEGIES` | `vector,bm25,rerank` | Active retrieval strategies |
-| `RAG_THRESHOLD` | `0.6` | Vector similarity threshold |
-| `RAG_TOP_K` | `3` | Max documents retrieved |
-| `RAG_RERANK_CANDIDATES` | `20` | Candidates fed to reranker |
-| `RAG_CROSS_ENCODER` | `BAAI/bge-reranker-v2-m3` | Reranker model |
-| `EMBEDDING_MODEL` | `paraphrase-multilingual-mpnet-base-v2` | Primary embedding model |
-| `EMBEDDING_DIMS` | `768` | Primary embedding dimensions |
-| `EMBEDDING_V2_DIMS` | `1024` | V2 embedding dimensions |
+| `RAG_THRESHOLD` | configurable (~0.6) | Vector similarity threshold |
+| `RAG_TOP_K` | configurable (~3–5) | Max documents retrieved |
+| `RAG_RERANK_CANDIDATES` | configurable (~20) | Candidates fed to reranker |
+| `RAG_CROSS_ENCODER` | cross-encoder model | Reranker model |
+| `EMBEDDING_MODEL` | primary embedding model | Primary embedding model |
+| `EMBEDDING_DIMS` | model-dependent (e.g., 768) | Primary embedding dimensions |
+| `EMBEDDING_V2_DIMS` | model-dependent (e.g., 1024) | V2 embedding dimensions |

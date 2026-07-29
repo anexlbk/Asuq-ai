@@ -21,6 +21,7 @@ class AsuqState(TypedDict, total=False):
     raw_input: str
     normalized_input: str
     script_type: str  # "arabic" | "french" | "english" | "franco" | "mixed"
+    darija_confidence: float  # 0.0-1.0 confidence that input is Darija
     chat_history: list[dict[str, Any]]
 
     # Routing

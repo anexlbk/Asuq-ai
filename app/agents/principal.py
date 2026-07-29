@@ -1,5 +1,10 @@
-"""Principal agent — orchestrates slave execution and response synthesis."""
+"""Principal agent — orchestrates slave execution and response synthesis.
 
+Per-task timeout + exception isolation prevents one slow/crashing slave
+from affecting unrelated tasks.
+"""
+
+import asyncio
 from typing import Any, Dict, List
 
 from app.agents.slaves import BaseSlave, LegalExpertSlave
@@ -10,6 +15,8 @@ SLAVE_REGISTRY: Dict[str, BaseSlave] = {
     "legal_expert": LegalExpertSlave(),
 }
 
+SLAVE_TIMEOUT_SECONDS = 30  # illustrative — configurable in production
+
 
 async def execute_slave(
     slave_name: str,
@@ -19,12 +26,28 @@ async def execute_slave(
     slave = SLAVE_REGISTRY.get(slave_name)
     if not slave:
         return {"result": "", "error": f"Unknown slave: {slave_name}"}
-    output = await slave.run(task, context)
-    return {
-        "result": output.result,
-        "metadata": output.metadata,
-        "error": output.error,
-    }
+    try:
+        output = await asyncio.wait_for(
+            slave.run(task, context),
+            timeout=SLAVE_TIMEOUT_SECONDS,
+        )
+        return {
+            "result": output.result,
+            "metadata": output.metadata,
+            "error": output.error,
+        }
+    except asyncio.TimeoutError:
+        return {
+            "result": "",
+            "metadata": {"error_type": "TimeoutError"},
+            "error": f"Slave {slave_name} timed out after {SLAVE_TIMEOUT_SECONDS}s",
+        }
+    except Exception as e:
+        return {
+            "result": "",
+            "metadata": {"error_type": type(e).__name__},
+            "error": f"Slave {slave_name} failed: {e}",
+        }
 
 
 async def principal_agent_run(

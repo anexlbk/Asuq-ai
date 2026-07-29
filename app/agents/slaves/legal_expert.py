@@ -1,4 +1,4 @@
-"""LegalExpertSlave — answers Algerian law questions using scoped RAG.
+"""LegalExpertSlave — answers Algerian law questions using scoped RAG (SHOWCASE).
 
 Failure mode: any error or missing RAG context returns confidence="low"
 with a disclaimer instead of fabricating legal information.
@@ -69,16 +69,12 @@ class LegalExpertSlave(BaseSlave):
                 if meta:
                     verified_articles.append(meta)
 
-            answer_prompt = LEGAL_EXPERT_SYSTEM.format(
-                query=query,
-                rag_context="\n\n".join(
-                    f"[Source: {d.get('metadata', {}).get('source_pdf', 'unknown')}] {d.get('content', '')}"
-                    for d in documents[:5]
-                ),
-                verified_citations="\n".join(
-                    f"- {v}" for v in verified_articles[:10]
-                ) if verified_articles else "No verified article citations available",
+            safe_query = query.replace("{", "{{").replace("}", "}}")
+            safe_rag = "\n\n".join(
+                d.get("content", "").replace("{", "{{").replace("}", "}}")
+                for d in documents[:5]
             )
+            answer_prompt = f"Query: {safe_query}\n\nContext:\n{safe_rag}"
 
             llm = context.get("llm")
             if not llm:
@@ -89,7 +85,8 @@ class LegalExpertSlave(BaseSlave):
                 )
 
             response = await llm.agenerate([answer_prompt])
-            result_text = response.generations[0][0].text
+            from app.utils.llm_utils import safe_llm_response
+            result_text = safe_llm_response(response.generations)
 
             return SlaveOutput(
                 result=result_text,

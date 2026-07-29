@@ -17,7 +17,8 @@ class AsuqState(TypedDict):
     script_type: str  # 'arabic' | 'franco' | 'mixed' | 'french' | 'english'
     current_normalized_input: str  # current-turn normalized text only (no chat_history prefix)
     normalized_input: str
-    language_override: Optional[str]  # 'en' | 'fr' | 'ar' from sticky facts
+    language_override: Optional[str]  # 'en' | 'fr' | 'ar' | 'darija' from sticky facts
+    darija_confidence: float  # 0.0-1.0 confidence that input is Darija (Franco/Arabic Dialect)
     chat_history: List[str]  # last N messages from current session
 
     # Routing

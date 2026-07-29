@@ -13,7 +13,7 @@ graph TD
         Auth["Auth<br/>/auth/*"]
         Chat["Chat<br/>/chat/*"]
         Upload["Upload<br/>/upload"]
-        AdminAPI["Admin<br/>/admin/rag/*"]
+        AdminAPI["Admin<br/>/admin/*"]
     end
 
     FastAPI --> Auth
@@ -194,17 +194,17 @@ graph TD
 
 The quality gate implements an intent-aware self-correction mechanism:
 
-| Intent | Quality Threshold | Max Passes (capped by global config) |
-|--------|-------------------|--------------------------------------|
-| `content` | 6.0 | 1 |
-| `ad_copy` | 6.0 | 1 |
-| `competitor` | 7.5 | 1 |
-| `trend_radar` | 7.0 | 1 |
-| `lead_magnet` | 6.5 | 1 |
-| `market_intel` | 7.0 | 1 |
-| *(default)* | 7.0 | 1 |
+| Intent | Quality Threshold (illustrative) | Max Passes (illustrative) |
+|--------|-------------------------------|---------------------------|
+| `content` | ~6.0 | 1 |
+| `ad_copy` | ~6.0 | 1 |
+| `competitor` | ~7.5 | 1 |
+| `trend_radar` | ~7.0 | 1 |
+| `lead_magnet` | ~6.5 | 1 |
+| `market_intel` | ~7.0 | 1 |
+| *(default)* | ~7.0 | 1 |
 
-> All intent-specific max passes are capped by the global `MAX_SELF_CORRECT_PASSES` setting (currently 1), so the effective max is always 1 pass regardless of intent.
+> Max passes are capped by the global `MAX_SELF_CORRECT_PASSES` config setting. Values shown are illustrative ranges, not exact production numbers.
 
 When the reviewer score falls below the threshold, the gate routes back to `slave_executor` with feedback. On exhaustion, the `quality_exhausted` flag is set and synthesis proceeds with a quality warning.
 
@@ -251,17 +251,22 @@ sequenceDiagram
 
 Any node that encounters an error sets `state["error"]` and routes directly to `response_formatter`, which returns the error to the user. The graph never crashes from a single node failure.
 
-## Configuration Numbers
+Security input/output nodes are **fail-closed**: on any internal error they return `safe: False`
+and block the request, rather than allowing it through.
 
-| Setting | Value | Source |
-|---------|-------|--------|
-| `MAX_RETRIES` | 2 | `app/config.py` |
-| `MAX_SELF_CORRECT_PASSES` | 1 | `app/config.py` |
-| `SHORT_TERM_MEMORY_TTL` | 7200s (2h) | `app/config.py` |
-| `SHORT_TERM_MEMORY_LIMIT` | 10 | `app/config.py` |
-| `MAX_LONG_TERM_PER_USER` | 200 | `app/config.py` |
-| `RAG_THRESHOLD` | 0.6 | `app/config.py` |
-| `RAG_TOP_K` | 3 | `app/config.py` |
-| `MODERATION_LAYER_2_THRESHOLD` | 0.7 | `app/config.py` |
-| `GLOBAL_KNOWLEDGE_TTL_DAYS` | 365 | `app/config.py` |
-| `KNOWLEDGE_SWEEP_INTERVAL_HOURS` | 6 | `app/config.py` |
+## Configuration Numbers (Illustrative)
+
+Values shown are representative ranges. Exact settings are managed via environment/config and may differ in production.
+
+| Setting | Value (illustrative) | Source |
+|---------|---------------------|--------|
+| `MAX_RETRIES` | configurable (default ~2) | `app/config.py` |
+| `MAX_SELF_CORRECT_PASSES` | configurable (default ~1) | `app/config.py` |
+| `SHORT_TERM_MEMORY_TTL` | configurable (e.g., ~hours) | `app/config.py` |
+| `SHORT_TERM_MEMORY_LIMIT` | configurable | `app/config.py` |
+| `MAX_LONG_TERM_PER_USER` | configurable | `app/config.py` |
+| `RAG_THRESHOLD` | configurable (~0.6) | `app/config.py` |
+| `RAG_TOP_K` | configurable (~3–5) | `app/config.py` |
+| `MODERATION_LAYER_2_THRESHOLD` | configurable via settings | `app/config.py` |
+| `GLOBAL_KNOWLEDGE_TTL_DAYS` | configurable (~365) | `app/config.py` |
+| `KNOWLEDGE_SWEEP_INTERVAL_HOURS` | configurable | `app/config.py` |

@@ -52,7 +52,7 @@ data/
 archive/
 outputs/
 
-# Internal tooling
+# CLI tools
 *_cli.py
 
 # Agent configs

@@ -1,19 +1,15 @@
-"""Standalone batch CLI for ingesting Algerian legal PDFs into dz_knowledge.
+"""Standalone batch CLI for ingesting legal PDFs (SHOWCASE).
 
-Usage:
-    py -m app.ingestion.legal_ingest --pdf-dir ./data/jo_pdfs --batch-size 50
-
-Processes all PDFs in the given directory:
+This is a REFERENCE implementation demonstrating the ingestion pipeline:
   1. OCR (tesseract + pdf2image)
-  2. Article-based chunking (legal_chunker)
-  3. 768d embedding via paraphrase-multilingual-mpnet-base-v2
-  4. Bulk upsert into dz_knowledge via psycopg2 execute_values
+  2. Article-based chunking
+  3. Embedding generation
+  4. Bulk upsert into knowledge base
 
-Runs as a separate, long-running container (4-8 hr for 1,151 PDFs).
-Each PDF's chunks are transactional — all or nothing.
+Not production code — configuration values and model names are illustrative.
 """
-
 import argparse
+import hashlib
 import os
 import sys
 import time
@@ -26,26 +22,25 @@ from sentence_transformers import SentenceTransformer
 from app.ingestion.legal_chunker import chunk_legal_text
 
 DB_CONFIG = {
-    "host": os.getenv("SUPABASE_DB_HOST", "localhost"),
-    "port": int(os.getenv("SUPABASE_DB_PORT", "5432")),
-    "dbname": os.getenv("SUPABASE_DB_NAME", "postgres"),
-    "user": os.getenv("SUPABASE_DB_USER", "postgres"),
-    "password": os.getenv("SUPABASE_DB_PASSWORD", ""),
+    "host": os.getenv("DB_HOST", "localhost"),
+    "port": int(os.getenv("DB_PORT", "5432")),
+    "dbname": os.getenv("DB_NAME", "postgres"),
+    "user": os.getenv("DB_USER", "postgres"),
+    "password": os.getenv("DB_PASSWORD", ""),
 }
 
-EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+EMBEDDING_MODEL = "example/embedding-model"
 EMBEDDING_DIM = 768
 BATCH_SIZE = 50
 OCR_DPI = 200
 
 
 def _ocr_pdf(pdf_path: str) -> str:
-    """OCR a single PDF page by page and return concatenated text."""
     try:
         from pdf2image import convert_from_path
         import pytesseract
     except ImportError:
-        print("ERROR: pdf2image and pytesseract required. Install with: pip install pdf2image pytesseract")
+        print("ERROR: pdf2image and pytesseract required.")
         sys.exit(1)
     images = convert_from_path(pdf_path, dpi=OCR_DPI)
     text_parts = []
@@ -62,7 +57,6 @@ def _process_pdf(
     model: SentenceTransformer,
     conn: psycopg2.extensions.connection,
 ) -> int:
-    """Process a single PDF: OCR -> chunk -> embed -> insert. Returns chunk count."""
     filename = os.path.basename(pdf_path)
     print(f"Processing: {filename}")
 
@@ -86,30 +80,25 @@ def _process_pdf(
         for chunk, emb in zip(chunks, embeddings):
             metadata = chunk["metadata"].copy()
             metadata["category"] = "regulations"
-            metadata["moderation_status"] = "approved"
-            metadata["legal_metadata"] = {
-                "source_pdf": filename,
-                "chunk_strategy": metadata.get("chunk_strategy", "article_group"),
-                "char_start": metadata.get("char_start"),
-                "char_end": metadata.get("char_end"),
-                "total_chunks": metadata.get("total_chunks"),
-            }
+            content_hash = hashlib.sha256(chunk["content"].encode("utf-8")).hexdigest()
             values.append((
                 chunk["content"],
                 emb,
                 metadata,
                 "regulations",
                 "approved",
+                content_hash,
+                "pdf",
             ))
         execute_values(
             cur,
             """
-            INSERT INTO dz_knowledge (content, embedding, metadata, category, moderation_status)
+            INSERT INTO knowledge_base (content, embedding, metadata, category, moderation_status, content_hash, source_file_type)
             VALUES %s
-            ON CONFLICT (content) DO NOTHING
+            ON CONFLICT (content_hash) DO NOTHING
             """,
             values,
-            template="(%s, %s::vector, %s::jsonb, %s, %s)",
+            template="(%s, %s::vector, %s::jsonb, %s, %s, %s, %s)",
         )
     conn.commit()
     print(f"  Inserted {len(chunks)} chunks")
@@ -117,7 +106,7 @@ def _process_pdf(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Ingest Algerian legal PDFs into dz_knowledge")
+    parser = argparse.ArgumentParser(description="Ingest legal PDFs into knowledge base")
     parser.add_argument("--pdf-dir", required=True, help="Directory containing PDF files")
     parser.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Batch size for DB inserts")
     args = parser.parse_args()
@@ -158,7 +147,6 @@ def main():
         except Exception as e:
             conn.rollback()
             print(f"  ERROR processing {pdf_path}: {e}")
-            print(f"  Transaction rolled back for this PDF")
 
     elapsed = time.time() - start_time
     print(f"\nDone: {len(pdf_files)} PDFs, {total_chunks} chunks in {elapsed/60:.1f} minutes")

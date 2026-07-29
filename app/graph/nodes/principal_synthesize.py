@@ -29,17 +29,20 @@ async def principal_synthesize_node(state: AsuqState) -> Dict[str, Any]:
             context_parts.append(f"=== {slave_name} ===\n{output['result']}")
 
     combined = "\n\n".join(context_parts)
+    escaped_combined = combined.replace("{", "{{").replace("}", "}}")
     prompt = PRINCIPAL_SYNTHESIZER_SYSTEM.format(
         slaves_used=", ".join(slaves_used),
-    ) + f"\n\nSlave outputs:\n{combined}"
+    ) + f"\n\nSlave outputs:\n{escaped_combined}"
 
     llm = state.get("llm")
     if not llm:
         return {"error": "No LLM available for synthesis"}
 
     response = await llm.agenerate([prompt])
+    from app.utils.llm_utils import safe_llm_response
+    result_text = safe_llm_response(response.generations)
 
     return {
-        "llm_response": response.generations[0][0].text,
+        "llm_response": result_text,
         "response_type": "text",
     }

@@ -15,18 +15,12 @@ auto-approving or auto-rejecting. A wrong auto-reject blocks a legitimate user; 
 auto-approve lets something bad through. Queuing trades latency (for the uncertain minority) for
 correctness on both failure directions.
 
-## Fail-open, on purpose
+## Fail-closed (current behavior)
 
-Every security node defaults to **allow-through** if it hits an internal error - timeout, model
-unavailable, unexpected exception - rather than blocking the user. The error is always logged.
+Security nodes are **fail-closed**: every internal error (timeout, model unavailable, unexpected
+exception) results in `safe: False`, blocking the request. The error is always logged.
 
-This is a real product tradeoff, not an oversight: a marketing assistant that goes down whenever
-a moderation dependency has a bad moment is worse for most users than one that occasionally lets
-a borderline message through during a transient failure. The fail-open behavior is scoped
-tightly - it only triggers on infrastructure/internal errors, never on a positive detection.
-A message that layer 2 or 3 actually flags is blocked; a message that layer 2 or 3 *couldn't
-evaluate* is allowed and logged for review.
-
-Changing this default from fail-open to fail-closed is a one-line change in each node, but it's a
-product decision with real availability consequences, made deliberately and revisited only
-explicitly.
+This was changed from fail-open to fail-closed to ensure that a transient dependency failure never
+lets harmful content through. The tradeoff is that legitimate users may occasionally be blocked
+during infrastructure blips, but this is preferable to the alternative for a production security
+boundary.
